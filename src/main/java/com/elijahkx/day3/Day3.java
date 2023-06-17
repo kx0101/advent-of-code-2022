@@ -3,40 +3,72 @@ package com.elijahkx.day3;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Day3 {
+    private static final int LOWERCASE_PRIORITY_OFFSET = 1;
+    private static final int UPPERCASE_PRIORITY_OFFSET = 27;
+
     public static void main(String[] args) throws IOException {
         var input = Files.readString(Path.of("src/main/java/com/elijahkx/day3/input.txt"));
+        String[] rucksacks = input.split("\n");
 
-        var sum = input.lines().mapToInt(line -> {
-            var p1 = line.substring(0, line.length() / 2);
-            var p2 = line.substring(line.length() / 2, line.length());
+        int part1 = calculateSumOfPriorities1(rucksacks);
+        int part2 = calculateSumOfPriorities2(rucksacks);
 
-            return commonPriority(List.of(p1, p2));
-        }).sum();
-
-        System.out.printf("part1: %d", sum);
-
-        var counter = IntStream.range(0, input.length()).iterator();
-
-        var sum2 = input.lines()
-                .collect(Collectors.groupingBy(c -> counter.nextInt() / 3)).values().stream()
-                .mapToInt(line -> commonPriority(line)).sum();
-
-        System.out.printf("part2: %d", sum2);
+        System.out.println("part1 :" + part1);
+        System.out.println("part2 :" + part2);
     }
 
-    static int commonPriority(List<String> strings) {
-        var c = strings.stream().reduce((s1, s2) -> commonChars(s1, s2)).get().charAt(0);
+    private static int calculateSumOfPriorities1(String[] rucksacks) {
+        int sumOfPriorities = 0;
 
-        return c < 'a' ? c - 'A' + 27 : c - 'a' + 1;
+        for (String rucksack : rucksacks) {
+            String firstPart = rucksack.substring(0, rucksack.length() / 2);
+            String secondPart = rucksack.substring(rucksack.length() / 2);
+
+            Set<Character> seenItems = new HashSet<>();
+
+            for (char c : firstPart.toCharArray()) {
+                if (secondPart.contains(String.valueOf(c)) && !seenItems.contains(c)) {
+                    int priority = getPriority(c);
+
+                    sumOfPriorities += priority;
+                    seenItems.add(c);
+                }
+            }
+        }
+
+        return sumOfPriorities;
     }
 
-    static String commonChars(String a, String b) {
-        return a.chars().filter(i1 -> b.chars().anyMatch(i2 -> i2 == i1)).distinct()
-                .mapToObj(c -> Character.toString(c)).collect(Collectors.joining());
+    private static int calculateSumOfPriorities2(String[] rucksacks) {
+        int sumOfPriorities = 0;
+
+        for (int i = 0; i < rucksacks.length; i += 3) {
+            String rucksack1 = rucksacks[i];
+            String rucksack2 = rucksacks[i + 1];
+            String rucksack3 = rucksacks[i + 2];
+
+            for (char c : rucksack1.toCharArray()) {
+                if (rucksack2.contains(String.valueOf(c)) && rucksack3.contains(String.valueOf(c))) {
+                    int priority = getPriority(c);
+
+                    sumOfPriorities += priority;
+                    break;
+                }
+            }
+        }
+
+        return sumOfPriorities;
+    }
+
+    private static int getPriority(char item) {
+        if (Character.isLowerCase(item)) {
+            return item - 'a' + LOWERCASE_PRIORITY_OFFSET;
+        } else {
+            return item - 'A' + UPPERCASE_PRIORITY_OFFSET;
+        }
     }
 }
